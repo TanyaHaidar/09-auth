@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
-import { fetchNotes } from "../../lib/api";
-import NoteList from "../../components/NoteList/NoteList";
-import Pagination from "../../components/Pagination/Pagination";
-import SearchBox from "../../components/SearchBox/SearchBox";
-import Modal from "../../components/Modal/Modal";
-import NoteForm from "../../components/NoteForm/NoteForm";
-import { useDebouncedValue } from "../../hooks/useDebouncedValue";
+import { fetchNotes } from "@/lib/api";
+import NoteList from "@/components/NoteList/NoteList";
+import Pagination from "@/components/Pagination/Pagination";
+import SearchBox from "@/components/SearchBox/SearchBox";
+import Modal from "@/components/Modal/Modal";
+import NoteForm from "@/components/NoteForm/NoteForm";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import styles from "./NotesPage.module.css";
 
 const PER_PAGE = 12;
@@ -23,7 +23,7 @@ export default function NotesClient() {
     setPage(1);
   };
 
-  const debouncedSearch = useDebouncedValue(search, 500);
+  const debouncedSearch = useDebouncedValue<string>(search, 500);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["notes", page, debouncedSearch],
@@ -40,7 +40,6 @@ export default function NotesClient() {
     <div className={styles.app}>
       <header className={styles.toolbar}>
         <SearchBox value={search} onChange={handleSearchChange} />
-
         {data && data.totalPages > 1 && (
           <Pagination
             pageCount={data.totalPages}
@@ -48,7 +47,6 @@ export default function NotesClient() {
             onPageChange={(p: number) => setPage(p)}
           />
         )}
-
         <button className={styles.button} onClick={() => setIsModalOpen(true)}>
           Create note +
         </button>
