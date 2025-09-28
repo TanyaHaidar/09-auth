@@ -1,13 +1,12 @@
 import axios from "axios";
-import { Note, CreateNoteDTO } from "@/types/note";
+import { Note, CreateNoteDTO } from "../types/note";
 
 const api = axios.create({
-  baseURL: "https://notehub-public.goit.study/api",
+  baseURL: import.meta.env.NEXT_PUBLIC_API_URL,
   headers: {
-    Authorization: `Bearer ${process.env.NEXT_PUBLIC_NOTEHUB_TOKEN}`,
+    Authorization: `Bearer ${import.meta.env.NEXT_PUBLIC_NOTEHUB_TOKEN}`,
   },
 });
-
 export interface FetchNotesParams {
   page?: number;
   search?: string;
@@ -24,12 +23,18 @@ export interface FetchNotesResponse {
 export async function fetchNotes(
   params: FetchNotesParams = {}
 ): Promise<FetchNotesResponse> {
-  const { data } = await api.get<FetchNotesResponse>("/notes", { params });
-  return data;
-}
+  const { page = 1, perPage = 12, search, tag, sortBy } = params;
 
-export async function fetchNoteById(id: string): Promise<Note> {
-  const { data } = await api.get<Note>(`/notes/${id}`);
+  const { data } = await api.get<FetchNotesResponse>("/notes", {
+    params: {
+      page,
+      perPage,
+      ...(search ? { search } : {}),
+      ...(tag ? { tag } : {}),
+      ...(sortBy ? { sortBy } : {}),
+    },
+  });
+
   return data;
 }
 
