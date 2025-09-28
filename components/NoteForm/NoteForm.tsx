@@ -5,6 +5,7 @@ import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import css from "./NoteForm.module.css";
 import { createNote } from "@/lib/api";
+import { NoteTag } from "@/types/note";
 
 interface NoteFormProps {
   onSuccess: () => void;
@@ -30,7 +31,10 @@ export default function NoteForm({ onSuccess, onCancel }: NoteFormProps) {
         content: Yup.string().required("Content is required"),
       })}
       onSubmit={(values, { setSubmitting }) => {
-        mutation.mutate(values);
+        mutation.mutate({
+          ...values,
+          tag: values.tag as NoteTag,
+        });
         setSubmitting(false);
       }}
     >
