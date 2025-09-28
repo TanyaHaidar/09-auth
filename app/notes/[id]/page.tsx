@@ -6,20 +6,25 @@ import {
 import { fetchNoteById } from "../../../lib/api";
 import NoteDetailsClient from "./NoteDetails.client";
 
-interface Params {
+interface NoteDetailsPageProps {
   params: { id: string };
 }
 
-export default async function NoteDetailsPage({ params }: Params) {
+export default async function NoteDetailsPage({
+  params,
+}: NoteDetailsPageProps) {
   const queryClient = new QueryClient();
+
+  const noteId = String(params.id);
+
   await queryClient.prefetchQuery({
-    queryKey: ["note", params.id],
-    queryFn: () => fetchNoteById(params.id),
+    queryKey: ["note", noteId],
+    queryFn: () => fetchNoteById(noteId),
   });
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <NoteDetailsClient id={params.id} />
+      <NoteDetailsClient id={noteId} />
     </HydrationBoundary>
   );
 }

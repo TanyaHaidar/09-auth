@@ -2,11 +2,12 @@ import axios from "axios";
 import { Note, CreateNoteDTO } from "../types/note";
 
 const api = axios.create({
-  baseURL: import.meta.env.NEXT_PUBLIC_API_URL,
+  baseURL: process.env.NEXT_PUBLIC_API_URL,
   headers: {
-    Authorization: `Bearer ${import.meta.env.NEXT_PUBLIC_NOTEHUB_TOKEN}`,
+    Authorization: `Bearer ${process.env.NEXT_PUBLIC_NOTEHUB_TOKEN}`,
   },
 });
+
 export interface FetchNotesParams {
   page?: number;
   search?: string;
@@ -35,6 +36,11 @@ export async function fetchNotes(
     },
   });
 
+  return data;
+}
+
+export async function fetchNoteById(id: string): Promise<Note> {
+  const { data } = await api.get<Note>(`/notes/${id}`);
   return data;
 }
 
