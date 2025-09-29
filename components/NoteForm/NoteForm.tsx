@@ -25,17 +25,24 @@ export default function NoteForm({ onSuccess, onCancel }: NoteFormProps) {
 
   return (
     <Formik
-      initialValues={{ title: "", content: "", tag: "Personal" }}
+      initialValues={{ title: "", content: "", tag: "Personal" as NoteTag }}
       validationSchema={Yup.object({
-        title: Yup.string().required("Title is required"),
-        content: Yup.string().required("Content is required"),
+        title: Yup.string()
+          .required("Title is required")
+          .min(3, "Title must be at least 3 characters")
+          .max(50, "Title must be at most 50 characters"),
+        content: Yup.string().max(
+          500,
+          "Content must be at most 500 characters"
+        ),
+        tag: Yup.mixed<NoteTag>()
+          .oneOf(["Personal", "Work", "Todo", "Meeting", "Shopping"])
+          .required("Tag is required"),
       })}
       onSubmit={(values, { setSubmitting }) => {
-        mutation.mutate({
-          ...values,
-          tag: values.tag as NoteTag,
+        mutation.mutate(values, {
+          onSettled: () => setSubmitting(false),
         });
-        setSubmitting(false);
       }}
     >
       <Form className={css.form}>
@@ -58,9 +65,12 @@ export default function NoteForm({ onSuccess, onCancel }: NoteFormProps) {
             <option value="Meeting">Meeting</option>
             <option value="Shopping">Shopping</option>
           </Field>
+          <ErrorMessage name="tag" component="div" className={css.error} />
         </label>
         <div className={css.actions}>
-          <button type="submit">Create</button>
+          <button type="submit" disabled={mutation.isPending}>
+            {mutation.isPending ? "Creating..." : "Create"}
+          </button>
           <button type="button" onClick={onCancel}>
             Cancel
           </button>
