@@ -1,24 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { fetchNoteById } from "@/lib/api";
-import { Note } from "@/types/note";
-import css from "@/app/notes/NoteDetails.module.css";
+import { useQuery } from "@tanstack/react-query";
+import { fetchNoteById } from "@/lib/api/notes";
+import Modal from "@/components/Modal/Modal";
+import { useRouter } from "next/navigation";
+import NoteDetails from "@/app/notes/[id]/NoteDetails.client";
 
-export default function NotePreview({ id }: { id: string }) {
-  const [note, setNote] = useState<Note | null>(null);
+interface NotePreviewProps {
+  id: string;
+}
 
-  useEffect(() => {
-    fetchNoteById(id).then(setNote);
-  }, [id]);
+export default function NotePreview({ id }: NotePreviewProps) {
+  const router = useRouter();
 
-  if (!note) return <p>Loading...</p>;
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["note", id],
+    queryFn: () => fetchNoteById(id),
+    refetchOnMount: false,
+  });
+
+  const handleClose = () => {
+    router.back();
+  };
+
+  if (isLoading) {
+    return (
+      <Modal onClose={handleClose}>
+        <p>Loading...</p>
+      </Modal>
+    );
+  }
+
+  if (isError || !data) {
+    return (
+      <Modal onClose={handleClose}>
+        <p>Error loading note</p>
+      </Modal>
+    );
+  }
 
   return (
-    <div className={css.details}>
-      <h2 className={css.title}>{note.title}</h2>
-      <p className={css.content}>{note.content}</p>
-      <p className={css.meta}>Tag: {note.tag}</p>
-    </div>
+    <Modal onClose={handleClose}>
+      <NoteDetails id={id} />
+    </Modal>
   );
 }

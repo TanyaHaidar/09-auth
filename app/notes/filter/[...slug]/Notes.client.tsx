@@ -1,40 +1,57 @@
 "use client";
 
-import React, { useState } from "react";
-import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchNotes } from "@/lib/api";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
 import SearchBox from "@/components/SearchBox/SearchBox";
 import Modal from "@/components/Modal/Modal";
 import NoteForm from "@/components/NoteForm/NoteForm";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import styles from "./NotesPage.module.css";
+
+interface NotesClientProps {
+  tag?: string;
+}
 
 const PER_PAGE = 12;
 
-export default function NotesClient() {
+export default function NotesClient({ tag }: NotesClientProps) {
   const [page, setPage] = useState<number>(1);
   const [search, setSearch] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
-    setPage(1);
-  };
-
   const debouncedSearch = useDebouncedValue<string>(search, 500);
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["notes", page, debouncedSearch],
+  const tagParam = tag === "All" ? undefined : tag;
+
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    setPage(1);
+  }, [tag]);
+
+  const { data, isLoading, isError, isFetching } = useQuery({
+    queryKey: ["notes", page, debouncedSearch, tagParam],
     queryFn: () =>
       fetchNotes({
         page,
         perPage: PER_PAGE,
         search: debouncedSearch,
+        tag: tagParam,
       }),
-    placeholderData: keepPreviousData,
+    keepPreviousData: true,
   });
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
 
   return (
     <div className={styles.app}>
@@ -44,7 +61,7 @@ export default function NotesClient() {
           <Pagination
             pageCount={data.totalPages}
             currentPage={page}
-            onPageChange={(p: number) => setPage(p)}
+            onPageChange={handlePageChange}
           />
         )}
         <button className={styles.button} onClick={() => setIsModalOpen(true)}>
@@ -53,9 +70,9 @@ export default function NotesClient() {
       </header>
 
       {isLoading && <p>Loading notes...</p>}
-      {isError && <p>Error loading notes</p>}
+      {isError && <p>Error loading notes.</p>}
 
-      {data && data.notes && data.notes.length > 0 ? (
+      {!isLoading && data && data.notes && data.notes.length > 0 ? (
         <NoteList notes={data.notes} />
       ) : (
         !isLoading && <p>No notes found.</p>
@@ -64,11 +81,16 @@ export default function NotesClient() {
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>
           <NoteForm
-            onSuccess={() => setIsModalOpen(false)}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["notes"] });
+              setIsModalOpen(false);
+            }}
             onCancel={() => setIsModalOpen(false)}
           />
         </Modal>
       )}
+
+      {isFetching && !isLoading && <p className={styles.fetching}>Updating...</p>}
     </div>
   );
 }
