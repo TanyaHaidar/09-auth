@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchNoteById } from "@/lib/api/notes";
+import { fetchNoteById } from "@/lib/api";
 import Modal from "@/components/Modal/Modal";
 import { useRouter } from "next/navigation";
 import NoteDetails from "@/app/notes/[id]/NoteDetails.client";
