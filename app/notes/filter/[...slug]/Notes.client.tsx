@@ -41,7 +41,7 @@ export default function NotesClient({ tag }: NotesClientProps) {
         search: debouncedSearch,
         tag: tagParam,
       }),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 
   const handlePageChange = (newPage: number) => {
