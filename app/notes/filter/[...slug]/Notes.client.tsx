@@ -1,14 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import { fetchNotes } from "@/lib/api";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
 import SearchBox from "@/components/SearchBox/SearchBox";
-import Modal from "@/components/Modal/Modal";
-import NoteForm from "@/components/NoteForm/NoteForm";
 import styles from "./NotesPage.module.css";
 
 interface NotesClientProps {
@@ -20,13 +19,9 @@ const PER_PAGE = 12;
 export default function NotesClient({ tag }: NotesClientProps) {
   const [page, setPage] = useState<number>(1);
   const [search, setSearch] = useState<string>("");
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const debouncedSearch = useDebouncedValue<string>(search, 500);
-
   const tagParam = tag === "All" ? undefined : tag;
-
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     setPage(1);
@@ -64,9 +59,10 @@ export default function NotesClient({ tag }: NotesClientProps) {
             onPageChange={handlePageChange}
           />
         )}
-        <button className={styles.button} onClick={() => setIsModalOpen(true)}>
+
+        <Link href="/notes/action/create" className={styles.button}>
           Create note +
-        </button>
+        </Link>
       </header>
 
       {isLoading && <p>Loading notes...</p>}
@@ -76,18 +72,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
         <NoteList notes={data.notes} />
       ) : (
         !isLoading && <p>No notes found.</p>
-      )}
-
-      {isModalOpen && (
-        <Modal onClose={() => setIsModalOpen(false)}>
-          <NoteForm
-            onSuccess={() => {
-              queryClient.invalidateQueries({ queryKey: ["notes"] });
-              setIsModalOpen(false);
-            }}
-            onCancel={() => setIsModalOpen(false)}
-          />
-        </Modal>
       )}
 
       {isFetching && !isLoading && <p className={styles.fetching}>Updating...</p>}
