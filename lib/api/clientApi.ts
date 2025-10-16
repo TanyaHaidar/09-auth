@@ -58,7 +58,7 @@ export async function checkSession(): Promise<User | null> {
   try {
     const { data } = await axios.get("/api/auth/session", { withCredentials: true });
     return data ?? null;
-  } catch (err: any) {
+    } catch (err: unknown) {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;
       if (status === 400 || status === 401) {
