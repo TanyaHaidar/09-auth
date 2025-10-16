@@ -12,6 +12,12 @@ import NoteForm from "@/components/NoteForm/NoteForm";
 import styles from "./NotesPage.module.css";
 import type { Note } from "@/types/note";
 
+interface NotesResponse {
+  notes: Note[];
+  totalPages: number;
+  totalNotes?: number;
+}
+
 interface NotesClientProps {
   tag?: string;
 }
@@ -24,7 +30,6 @@ export default function NotesClient({ tag }: NotesClientProps) {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const debouncedSearch = useDebouncedValue<string>(search, 500);
-
   const tagParam = tag === "All" ? undefined : tag;
 
   const queryClient = useQueryClient();
@@ -33,7 +38,7 @@ export default function NotesClient({ tag }: NotesClientProps) {
     setPage(1);
   }, [tag]);
 
-  const { data, isLoading, isError, isFetching } = useQuery({
+  const { data, isLoading, isError, isFetching } = useQuery<NotesResponse>({
     queryKey: ["notes", page, debouncedSearch, tagParam],
     queryFn: () =>
       fetchNotes({
@@ -58,13 +63,15 @@ export default function NotesClient({ tag }: NotesClientProps) {
     <div className={styles.app}>
       <header className={styles.toolbar}>
         <SearchBox value={search} onChange={handleSearchChange} />
-        {Array.isArray((data as any)?.notes) && (data as any).totalPages > 1 && (
+
+        {data?.totalPages && data.totalPages > 1 && (
           <Pagination
-            pageCount={(data as any).totalPages}
+            pageCount={data.totalPages}
             currentPage={page}
             onPageChange={handlePageChange}
           />
         )}
+
         <button className={styles.button} onClick={() => setIsModalOpen(true)}>
           Create note +
         </button>
@@ -73,12 +80,8 @@ export default function NotesClient({ tag }: NotesClientProps) {
       {isLoading && <p>Loading notes...</p>}
       {isError && <p>Error loading notes.</p>}
 
-      {!isLoading && data && (Array.isArray((data as any).notes) ? (data as any).notes.length > 0 : (data as any).length > 0) ? (
-        Array.isArray((data as any).notes) ? (
-          <NoteList notes={(data as any).notes as Note[]} />
-        ) : (
-          <NoteList notes={data as Note[]} />
-        )
+      {!isLoading && data?.notes && data.notes.length > 0 ? (
+        <NoteList notes={data.notes} />
       ) : (
         !isLoading && <p>No notes found.</p>
       )}
@@ -95,7 +98,9 @@ export default function NotesClient({ tag }: NotesClientProps) {
         </Modal>
       )}
 
-      {isFetching && !isLoading && <p className={styles.fetching}>Updating...</p>}
+      {isFetching && !isLoading && (
+        <p className={styles.fetching}>Updating...</p>
+      )}
     </div>
   );
 }
