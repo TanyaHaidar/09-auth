@@ -1,19 +1,17 @@
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  useEffect(() => {
+    router.refresh();
+  }, [router]);
+
   return (
-    <main
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: "100vh",
-        backgroundColor: "#f4f6f8",
-      }}
-    >
+    <div className="flex min-h-screen items-center justify-center bg-gray-100">
       {children}
-    </main>
+    </div>
   );
 }

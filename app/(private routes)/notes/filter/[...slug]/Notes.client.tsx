@@ -1,105 +1,97 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchNotes } from "@/lib/api/clientApi";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
-import SearchBox from "@/components/SearchBox/SearchBox";
 import Modal from "@/components/Modal/Modal";
 import NoteForm from "@/components/NoteForm/NoteForm";
-import styles from "./NotesPage.module.css";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import type { Note } from "@/types/note";
-
-interface NotesResponse {
-  notes: Note[];
-  totalPages: number;
-  totalNotes?: number;
-}
-
-interface NotesClientProps {
-  tag?: string;
-}
 
 const PER_PAGE = 12;
 
-export default function NotesClient({ tag }: NotesClientProps) {
-  const [page, setPage] = useState<number>(1);
-  const [search, setSearch] = useState<string>("");
-  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+interface NotesClientProps {
+  tagParam?: string;
+}
 
-  const debouncedSearch = useDebouncedValue<string>(search, 500);
-  const tagParam = tag === "All" ? undefined : tag;
+export default function NotesClient({ tagParam }: NotesClientProps) {
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    setPage(1);
-  }, [tag]);
-
-  const { data, isLoading, isError, isFetching } = useQuery<NotesResponse>({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ["notes", page, debouncedSearch, tagParam],
-    queryFn: () =>
+    queryFn: async () =>
       fetchNotes({
         page,
         perPage: PER_PAGE,
         search: debouncedSearch,
         tag: tagParam,
       }),
-    staleTime: 1000 * 60,
   });
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
   };
 
-  const handleSearchChange = (value: string) => {
-    setSearch(value);
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
     setPage(1);
   };
 
-  return (
-    <div className={styles.app}>
-      <header className={styles.toolbar}>
-        <SearchBox value={search} onChange={handleSearchChange} />
+  if (isError) {
+    return <p className="text-center text-red-500 mt-6">Failed to load notes</p>;
+  }
 
-        {data?.totalPages && data.totalPages > 1 && (
+  return (
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <input
+          type="text"
+          placeholder="Search notes..."
+          value={search}
+          onChange={handleSearchChange}
+          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring focus:ring-indigo-200"
+        />
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+        >
+          + New Note
+        </button>
+      </div>
+
+      {isLoading && <p className="text-center">Loading notes...</p>}
+
+      {data && data.notes.length > 0 ? (
+        <>
+          <NoteList notes={data.notes as Note[]} />
           <Pagination
-            pageCount={data.totalPages}
             currentPage={page}
+            totalPages={data.totalPages}
             onPageChange={handlePageChange}
           />
-        )}
-
-        <button className={styles.button} onClick={() => setIsModalOpen(true)}>
-          Create note +
-        </button>
-      </header>
-
-      {isLoading && <p>Loading notes...</p>}
-      {isError && <p>Error loading notes.</p>}
-
-      {!isLoading && data?.notes && data.notes.length > 0 ? (
-        <NoteList notes={data.notes} />
+        </>
       ) : (
-        !isLoading && <p>No notes found.</p>
+        !isLoading && <p className="text-center">No notes found</p>
       )}
 
       {isModalOpen && (
         <Modal onClose={() => setIsModalOpen(false)}>
           <NoteForm
-            onSuccess={() => {
+            mode="create"
+            onSubmitSuccess={() => {
               queryClient.invalidateQueries({ queryKey: ["notes"] });
               setIsModalOpen(false);
             }}
             onCancel={() => setIsModalOpen(false)}
           />
         </Modal>
-      )}
-
-      {isFetching && !isLoading && (
-        <p className={styles.fetching}>Updating...</p>
       )}
     </div>
   );

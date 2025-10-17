@@ -1,30 +1,32 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { checkSession } from "@/lib/api/serverApi";
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get("accessToken")?.value;
+const PUBLIC_PATHS = ["/login", "/register", "/"];
 
-  const isAuthPage =
-    request.nextUrl.pathname.startsWith("/sign-in") ||
-    request.nextUrl.pathname.startsWith("/sign-up");
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  const isPrivatePage = request.nextUrl.pathname.startsWith("/profile");
-
-  if (!token && isPrivatePage) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
+    return NextResponse.next();
   }
 
-  if (token && isAuthPage) {
-    return NextResponse.redirect(new URL("/profile", request.url));
+  try {
+    const res = await checkSession();
+    if (res.status === 200 && res.data) {
+      return NextResponse.next();
+    }
+  } catch (err) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
   }
 
-  return NextResponse.next();
+  const url = req.nextUrl.clone();
+  url.pathname = "/login";
+  return NextResponse.redirect(url);
 }
 
 export const config = {
-  matcher: [
-    "/profile/:path*",
-    "/sign-in",
-    "/sign-up",
-  ],
+  matcher: ["/notes/:path*", "/profile/:path*"],
 };

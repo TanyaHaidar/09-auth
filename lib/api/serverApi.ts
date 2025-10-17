@@ -1,53 +1,44 @@
+import api from "@/lib/api/api";
 import { cookies } from "next/headers";
-import { Note } from "@/types/note";
-import { User } from "@/types/user";
+import type { Note } from "@/types/note";
+import type { User } from "@/types/user";
+import type { AxiosResponse } from "axios";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://notehub-api.goit.study";
+function cookieHeader() {
+  const cookieStr = cookies().toString();
+  return cookieStr ? { Cookie: cookieStr } : undefined;
+}
 
-export async function fetchNotes(): Promise<Note[]> {
-  const res = await fetch(`${BASE_URL}/notes`, {
-    headers: {
-      Cookie: cookies().toString(),
+export async function fetchNotes(params: { page?: number; perPage?: number; search?: string; tag?: string } = {}): Promise<Note[]> {
+  const res = await api.get<Note[]>("/notes", {
+    headers: cookieHeader(),
+    params: {
+      page: params.page ?? 1,
+      perPage: params.perPage ?? 12,
+      ...(params.search ? { search: params.search } : {}),
+      ...(params.tag ? { tag: params.tag } : {}),
     },
-    credentials: "include",
   });
-
-  if (!res.ok) throw new Error("Failed to fetch notes");
-  return res.json();
+  return res.data;
 }
 
 export async function fetchNoteById(id: string): Promise<Note> {
-  const res = await fetch(`${BASE_URL}/notes/${id}`, {
-    headers: {
-      Cookie: cookies().toString(),
-    },
-    credentials: "include",
+  const res = await api.get<Note>(`/notes/${id}`, {
+    headers: cookieHeader(),
   });
-
-  if (!res.ok) throw new Error("Failed to fetch note");
-  return res.json();
+  return res.data;
 }
 
 export async function getMe(): Promise<User> {
-  const res = await fetch(`${BASE_URL}/users/me`, {
-    headers: {
-      Cookie: cookies().toString(),
-    },
-    credentials: "include",
+  const res = await api.get<User>("/users/me", {
+    headers: cookieHeader(),
   });
-
-  if (!res.ok) throw new Error("Failed to fetch user");
-  return res.json();
+  return res.data;
 }
 
-export async function checkSession(): Promise<User | null> {
-  const res = await fetch(`${BASE_URL}/auth/session`, {
-    headers: {
-      Cookie: cookies().toString(),
-    },
-    credentials: "include",
+export async function checkSession(): Promise<AxiosResponse<User>> {
+  const res = await api.get<User>("/auth/session", {
+    headers: cookieHeader(),
   });
-
-  if (!res.ok) return null;
-  return res.json();
+  return res;
 }
