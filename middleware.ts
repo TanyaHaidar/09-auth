@@ -1,32 +1,52 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { checkSession } from "@/lib/api/serverApi";
+import { cookies } from "next/headers";
 
-const PUBLIC_PATHS = ["/login", "/register", "/"];
+const AUTH_ROUTES = ["/sign-in", "/sign-up"];
+const PRIVATE_ROUTES = ["/profile", "/notes"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const cookieStore = cookies();
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const refreshToken = cookieStore.get("refreshToken")?.value;
 
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return NextResponse.next();
-  }
-
-  try {
-    const res = await checkSession();
-    if (res.status === 200 && res.data) {
-      return NextResponse.next();
+  if (!accessToken && refreshToken) {
+    try {
+      const res = await checkSession();
+      if (res) {
+        const response = NextResponse.next();
+        if (res.headers?.get("set-cookie")) {
+          response.headers.set("set-cookie", res.headers.get("set-cookie")!);
+        }
+        return response;
+      }
+    } catch {
     }
-  } catch (err) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
   }
 
-  const url = req.nextUrl.clone();
-  url.pathname = "/login";
-  return NextResponse.redirect(url);
+  const isPrivateRoute = PRIVATE_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
+
+  if (isPrivateRoute && !accessToken && !refreshToken) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  if (isAuthRoute && accessToken) {
+    return NextResponse.redirect(new URL("/profile", req.url));
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/notes/:path*", "/profile/:path*"],
+  matcher: [
+    "/profile/:path*",
+    "/notes/:path*",
+    "/sign-in",
+    "/sign-up",
+  ],
 };

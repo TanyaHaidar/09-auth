@@ -4,7 +4,7 @@ import {
   dehydrate,
   HydrationBoundary,
 } from "@tanstack/react-query";
-import { fetchNoteById } from "@/lib/api/serverApi";
+import { fetchNotes } from "@/lib/api/serverApi";
 import NotesClient from "./Notes.client";
 import styles from "./NotesPage.module.css";
 import type { Metadata } from "next";
@@ -42,7 +42,6 @@ export default async function NotesPage(props: PropsPromise) {
   const { params } = await props;
   const slug = params?.slug ?? [];
   const tagFromRoute = slug.length > 0 ? slug[0] : "All";
-
   const tagParam = tagFromRoute === "All" ? undefined : tagFromRoute;
 
   const queryClient = new QueryClient();

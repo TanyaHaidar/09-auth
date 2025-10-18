@@ -1,7 +1,8 @@
 import api from "@/lib/api/api";
 import type { Note, CreateNoteDTO } from "@/types/note";
 import type { User } from "@/types/user";
-import type { AxiosResponse } from "axios";
+import axios from "axios";
+
 
 export interface FetchNotesParams {
   page?: number;
@@ -16,14 +17,12 @@ export interface FetchNotesResponse {
 }
 
 export async function fetchNotes(params: FetchNotesParams = {}): Promise<FetchNotesResponse> {
+  const { page = 1, perPage = 12, search, tag } = params;
+
   const { data } = await api.get<FetchNotesResponse>("/notes", {
-    params: {
-      page: params.page ?? 1,
-      perPage: params.perPage ?? 12,
-      ...(params.search ? { search: params.search } : {}),
-      ...(params.tag ? { tag: params.tag } : {}),
-    },
+    params: { page, perPage, search, tag },
   });
+
   return data;
 }
 
@@ -37,9 +36,8 @@ export async function createNote(note: CreateNoteDTO): Promise<Note> {
   return data;
 }
 
-export async function deleteNote(id: string): Promise<Note> {
-  const { data } = await api.delete<Note>(`/notes/${id}`);
-  return data;
+export async function deleteNote(id: string): Promise<void> {
+  await api.delete(`/notes/${id}`);
 }
 
 export async function register(email: string, password: string): Promise<User> {
@@ -53,7 +51,13 @@ export async function login(email: string, password: string): Promise<User> {
 }
 
 export async function logout(): Promise<void> {
-  await api.post("/auth/logout", {});
+  try {
+    await api.post("/auth/logout", {});
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      console.error("Logout failed:", err.response?.status);
+    }
+  }
 }
 
 export async function checkSession(): Promise<User | null> {
@@ -61,9 +65,11 @@ export async function checkSession(): Promise<User | null> {
     const { data } = await api.get<User>("/auth/session");
     return data ?? null;
   } catch (err) {
-    if (api.isAxiosError && (err as any)?.response?.status) {
-      const status = (err as any).response.status;
-      if (status === 400 || status === 401) return null;
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      if (status === 400 || status === 401 || status === 404) {
+        return null;
+      }
     }
     throw err;
   }
