@@ -55,7 +55,10 @@ export async function logout(): Promise<void> {
     await api.post("/auth/logout", {});
   } catch (err) {
     if (axios.isAxiosError(err)) {
-      console.error("Logout failed:", err.response?.status);
+      const status = err.response?.status;
+      if (status !== 404) {
+        console.error("Logout failed:", status);
+      }
     }
   }
 }
