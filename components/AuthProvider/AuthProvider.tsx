@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { checkSession } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
 import type { ReactNode } from "react";
+import type { User } from "@/types/user";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -14,22 +15,18 @@ export default function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const verifyUser = async () => {
+    const verifyUser = async (): Promise<void> => {
       try {
-        const user = await checkSession();
-        if (user) {
-          setUser(user);
-        } else {
-          setUser(null);
-        }
-      } catch (err) {
+        const user: User | null = await checkSession();
+        setUser(user ?? null);
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    verifyUser();
+    void verifyUser();
   }, [setUser]);
 
   if (loading) {
