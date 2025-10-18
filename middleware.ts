@@ -14,13 +14,9 @@ export async function middleware(req: NextRequest) {
 
   if (!accessToken && refreshToken) {
     try {
-      const res = await checkSession();
-      if (res) {
-        const response = NextResponse.next();
-        if (res.headers?.get("set-cookie")) {
-          response.headers.set("set-cookie", res.headers.get("set-cookie")!);
-        }
-        return response;
+      const user = await checkSession();
+      if (user) {
+        return NextResponse.next();
       }
     } catch {
     }
