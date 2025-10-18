@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
+import SearchBox from "@/components/SearchBox/SearchBox";
 import type { Note } from "@/types/note";
 
 const PER_PAGE = 12;
@@ -27,16 +28,12 @@ export default function Notes({ tag }: { tag?: string }) {
       }),
   });
 
+  const notes = data?.notes || [];
+
   return (
     <main className="flex flex-col gap-4 p-4">
       <div className="flex justify-between items-center">
-        <input
-          type="text"
-          placeholder="Search notes..."
-          className="border rounded p-2"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <SearchBox value={search} onChange={setSearch} />
         <Link
           href="/notes/action/create"
           className="bg-blue-500 text-white px-4 py-2 rounded"
@@ -47,15 +44,17 @@ export default function Notes({ tag }: { tag?: string }) {
 
       {isLoading ? (
         <p>Loading...</p>
-      ) : (
+      ) : notes.length > 0 ? (
         <>
-          <NoteList notes={data?.notes || []} />
+          <NoteList notes={notes} />
           <Pagination
             currentPage={page}
             totalPages={data?.totalPages || 1}
             onPageChange={setPage}
           />
         </>
+      ) : (
+        <p className="text-center text-gray-500 mt-6">No notes found.</p>
       )}
     </main>
   );

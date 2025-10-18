@@ -22,7 +22,7 @@ export default function SignInPage() {
       await login(email, password);
       const user = await getMe();
       setUser(user);
-      router.push("/notes");
+      router.push("/profile");
     } catch {
       setError("Invalid credentials. Try again.");
     } finally {
