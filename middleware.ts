@@ -12,27 +12,32 @@ export async function middleware(req: NextRequest) {
   const accessToken = cookieStore.get("accessToken")?.value;
   const refreshToken = cookieStore.get("refreshToken")?.value;
 
-  const isPrivateRoute = PRIVATE_ROUTES.some((route) =>
-    pathname.startsWith(route)
-  );
-  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
-
   if (!accessToken && refreshToken) {
     try {
-      const response = await checkSession();
+      const res = await checkSession();
 
-      const setCookieHeader = response?.headers?.get?.("set-cookie");
-      if (setCookieHeader) {
-        const res = NextResponse.next();
-        res.headers.set("set-cookie", setCookieHeader);
+      if (res && res.headers?.get("set-cookie")) {
+        const response = NextResponse.next();
+        response.headers.set("set-cookie", res.headers.get("set-cookie")!);
+
+        const isAuthRoute = AUTH_ROUTES.some((route) =>
+          pathname.startsWith(route)
+        );
+
         if (isAuthRoute) {
           return NextResponse.redirect(new URL("/", req.url));
         }
-        return res;
+
+        return response;
       }
     } catch {
     }
   }
+
+  const isPrivateRoute = PRIVATE_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+  const isAuthRoute = AUTH_ROUTES.some((route) => pathname.startsWith(route));
 
   if (isPrivateRoute && !accessToken && !refreshToken) {
     return NextResponse.redirect(new URL("/sign-in", req.url));

@@ -32,15 +32,19 @@ export default function Notes({ tag }: { tag?: string }) {
       }),
   });
 
-  const notes: Note[] = data?.notes || [];
+  const notes = data?.notes || [];
 
   return (
     <main className="flex flex-col gap-4 p-4">
       <div className="flex justify-between items-center">
-        <SearchBox value={search} onChange={setSearch} />
+        <SearchBox
+          value={search}
+          onChange={setSearch}
+          placeholder="Search notes..."
+        />
         <Link
           href="/notes/action/create"
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           + Create Note
         </Link>
