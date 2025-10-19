@@ -8,7 +8,6 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
 import SearchBox from "@/components/SearchBox/SearchBox";
-import type { Note } from "@/types/note";
 
 const PER_PAGE = 12;
 
@@ -37,11 +36,7 @@ export default function Notes({ tag }: { tag?: string }) {
   return (
     <main className="flex flex-col gap-4 p-4">
       <div className="flex justify-between items-center">
-        <SearchBox
-          value={search}
-          onChange={setSearch}
-          placeholder="Search notes..."
-        />
+        <SearchBox value={search} onChange={setSearch} />
         <Link
           href="/notes/action/create"
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
