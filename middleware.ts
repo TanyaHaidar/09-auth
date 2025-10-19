@@ -18,7 +18,14 @@ export async function middleware(req: NextRequest) {
       const res = await checkSession();
 
       if (res instanceof Response) {
-        const setCookieHeader = res.headers.get("set-cookie");
+        const rawSetCookie = res.headers.get("set-cookie");
+
+        const setCookieHeader =
+          typeof rawSetCookie === "string"
+            ? rawSetCookie
+            : Array.isArray(rawSetCookie)
+            ? rawSetCookie.join(", ")
+            : String(rawSetCookie ?? "");
 
         if (setCookieHeader) {
           const response = NextResponse.next();
