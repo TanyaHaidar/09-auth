@@ -9,6 +9,7 @@ const PRIVATE_ROUTES = ["/profile", "/notes"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const cookieStore = await cookies();
+
   const accessToken = cookieStore.get("accessToken")?.value;
   const refreshToken = cookieStore.get("refreshToken")?.value;
 
@@ -16,14 +17,17 @@ export async function middleware(req: NextRequest) {
     try {
       const res = await checkSession();
 
-      if (res && res.headers?.get("set-cookie")) {
+      if (res && "headers" in res && res.headers?.get("set-cookie")) {
         const response = NextResponse.next();
-        response.headers.set("set-cookie", res.headers.get("set-cookie")!);
+        const newCookies = res.headers.get("set-cookie");
+
+        if (newCookies) {
+          response.headers.set("set-cookie", newCookies);
+        }
 
         const isAuthRoute = AUTH_ROUTES.some((route) =>
           pathname.startsWith(route)
         );
-
         if (isAuthRoute) {
           return NextResponse.redirect(new URL("/", req.url));
         }
