@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNotes } from "@/lib/api/clientApi";
 import Link from "next/link";
@@ -17,6 +17,10 @@ export default function Notes({ tag }: { tag?: string }) {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebouncedValue(search, 500);
 
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   const { data, isLoading } = useQuery({
     queryKey: ["notes", { page, tag, search: debouncedSearch }],
     queryFn: () =>
@@ -28,7 +32,7 @@ export default function Notes({ tag }: { tag?: string }) {
       }),
   });
 
-  const notes = data?.notes || [];
+  const notes: Note[] = data?.notes || [];
 
   return (
     <main className="flex flex-col gap-4 p-4">
